@@ -1,15 +1,27 @@
-# 定义 MLP 回归模型
-import pickle
+from sklearn.datasets import fetch_california_housing
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 from MLP import DenseLayer, relu_derivative, relu, MLPRegressor
-from load_data import load_california_data
+
+# 获取California住房数据集
+housing = fetch_california_housing()
+X, y = housing.data, housing.target
+
+# 数据标准化
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# 数据集分为训练集和测试集
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
 if __name__ == "__main__":
-    X_train, y_train = load_california_data()
     layers = [
-        DenseLayer(input_size=7, output_size=256, activation=relu, activation_derivative=relu_derivative),
-        DenseLayer(input_size=256, output_size=64, activation=relu, activation_derivative=relu_derivative),
-        DenseLayer(input_size=64, output_size=1, activation=lambda x: x, activation_derivative=lambda x: 1)
+        DenseLayer(input_size=X_train.shape[1], output_size=32, activation=lambda x: 1,
+                   activation_derivative=lambda x: 1),
+        DenseLayer(input_size=32, output_size=1, activation=lambda x: 1,
+                   activation_derivative=lambda x: 1),
+
         # Linear activation
     ]
 
@@ -17,9 +29,4 @@ if __name__ == "__main__":
     mlp_regressor = MLPRegressor(layers)
 
     # 训练模型
-    mlp_regressor.train(X_train, y_train, epochs=1000, learning_rate=0.5)
-
-
-    # 保存模型权重
-    # with open('./weights/mlp_regressor_weights.pkl', 'wb') as f:
-    #     pickle.dump(mlp_regressor.get_weights(), f)
+    mlp_regressor.train(X_train, y_train, epochs=1000, learning_rate=0.01)
