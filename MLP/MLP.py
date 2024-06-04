@@ -1,3 +1,6 @@
+# 该代码有问题，后续优化
+#
+#
 import pickle
 
 import matplotlib.pyplot as plt
@@ -151,12 +154,18 @@ class DenseLayer:
     def forward(self, X):
         self.X = X
         self.Z = np.dot(X, self.W) + self.b
-        self.A = self.activation(self.Z)
+        if self.activation != None:
+            self.A = self.activation(self.Z)
+        else:
+            self.A = self.Z
         return self.A
 
     def backward(self, dA, learning_rate):
         m = self.X.shape[0]
-        dZ = dA * self.activation_derivative(self.Z)
+        if self.activation_derivative != None:
+            dZ = dA * self.activation_derivative(self.Z)
+        else:
+            dZ = dA * self.Z
         self.dW = np.dot(self.X.T, dZ) / m
         self.db = np.sum(dZ, axis=0, keepdims=True) / m
         dX = np.dot(dZ, self.W.T)
@@ -299,7 +308,7 @@ class MLPClassifier(BaseMLP):
     def compute_loss(self, y, output):
         return cross_entropy_loss(y, output)
 
-    def accurancy(self, X, y):
+    def accuracy(self, X, y):
         y_predicted = self.forward(X)
         predictions = np.argmax(y_predicted, axis=1)
         labels = np.argmax(y, axis=1)
@@ -315,6 +324,11 @@ class MLPRegressor(BaseMLP):
 
     def compute_loss(self, y, output):
         return mean_squared_error(y, output)
+
+    def predirct(self, X):
+
+        Y_hat = self.forward(X)
+        return Y_hat
 
     def r2_score(self, y, output):
         # Calculate the total sum of squares (proportional to the variance of the data)
@@ -343,9 +357,9 @@ class MLPRegressor(BaseMLP):
             self.backward(output, learning_rate)
 
             if epoch % 100 == 0:
-                accuracy = self.r2_score(y, output)
+                r2_score = self.r2_score(y, output)
                 losses.append(loss)
-                accuracies.append(accuracy)
+                accuracies.append(r2_score)
                 if validation_data:
                     val_X, val_y = validation_data
                     val_loss = self.compute_loss(val_y, self.forward(val_X))
@@ -353,7 +367,7 @@ class MLPRegressor(BaseMLP):
                     val_losses.append(val_loss)
                     val_accuracies.append(r2_score)
                     print(
-                        f'Epoch {epoch}, Loss: {loss}, Accuracy: {accuracy}, Val Loss: {val_loss}, r2_score: {r2_score}')
+                        f'Epoch {epoch}, Loss: {loss},  Val Loss: {val_loss}, r2_score: {r2_score}')
                 else:
-                    print(f'Epoch {epoch}, Loss: {loss}, r2_score: {accuracy}')
+                    print(f'Epoch {epoch}, Loss: {loss}, r2_score: {r2_score}')
         self.plot_training_history(losses, accuracies, val_losses, val_accuracies)
